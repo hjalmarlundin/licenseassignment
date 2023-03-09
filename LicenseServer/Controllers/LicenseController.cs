@@ -1,44 +1,37 @@
-using Microsoft.AspNetCore.Mvc;
-
 namespace LicenseServer.Controllers;
+
+using Microsoft.AspNetCore.Mvc;
 
 [ApiController]
 [Route("[controller]")]
 public class LicenseController : ControllerBase
 {
-    private static readonly string[] Summaries = new[]
-    {
-        "Freezing", "Bracing", "Chilly", "Cool", "Mild", "Warm", "Balmy", "Hot", "Sweltering", "Scorching"
-    };
+    private readonly ILogger<LicenseController> logger;
+    private readonly ILicenseService licenseRepository;
 
-    private readonly ILogger<LicenseController> _logger;
-
-    public LicenseController(ILogger<LicenseController> logger)
+    public LicenseController(ILogger<LicenseController> logger, ILicenseService licenseService)
     {
-        _logger = logger;
+        this.logger = logger ?? throw new ArgumentNullException(nameof(logger));
+        this.licenseRepository = licenseService ?? throw new ArgumentNullException(nameof(licenseService));
     }
 
-    [HttpGet(Name = "GetLicenses")]
-    public IEnumerable<WeatherForecast> Get()
+    [HttpGet("~/GetLicenses")]
+    public async Task<IEnumerable<License>> Get()
     {
-        return Enumerable.Range(1, 5).Select(index => new WeatherForecast
-        {
-            Date = DateTime.Now.AddDays(index),
-            TemperatureC = Random.Shared.Next(-20, 55),
-            Summary = Summaries[Random.Shared.Next(Summaries.Length)]
-        })
-        .ToArray();
+        return await licenseRepository.ListAllLicenses();
     }
 
     [HttpPost(Name = "AddLicense")]
-    public IEnumerable<WeatherForecast> AddLicense()
+    public async Task<StatusCodeResult> AddLicense()
     {
-        return Enumerable.Range(1, 5).Select(index => new WeatherForecast
-        {
-            Date = DateTime.Now.AddDays(index),
-            TemperatureC = Random.Shared.Next(-20, 55),
-            Summary = Summaries[Random.Shared.Next(Summaries.Length)]
-        })
-        .ToArray();
+        await this.licenseRepository.AddLicense();
+        return StatusCode(201);
+    }
+
+    [HttpGet("~/RentLicense")]
+    public async Task<License> Rent(string renter = "client1")
+    {
+        var license = await this.licenseRepository.RentLicenseAsync(renter);
+        return license;
     }
 }
