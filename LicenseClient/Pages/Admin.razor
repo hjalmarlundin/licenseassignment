@@ -1,0 +1,61 @@
+﻿@page "/admin"
+
+<PageTitle>Admin page</PageTitle>
+
+@using LicenseClient.Data
+@inject LicenseService LicenseService
+
+<h1>Admin forecast</h1>
+
+<p>This component demonstrates fetching data from a service.</p>
+
+@if (licenses == null)
+{
+    <p><em>Loading...</em></p>
+}
+else
+{
+    <table class="table">
+    <thead>
+        <tr>
+            <th>Id</th>
+            <th>Status</th>
+            <th>Renter</th>
+            <th>Rented time</th>
+            <th>Rent expiration</th>
+            <th>Time left</th>
+        </tr>
+    </thead>
+    <tbody>
+        @foreach (var license in licenses)
+            {
+                <tr>
+                    <td>@license.Identifier</td>
+                    <td>@license.RentalInformation.Status.ToString()</td>
+                    <td>@license.RentalInformation.Renter?.ToString()</td>
+                    <td>@license.RentalInformation.RentedTime.ToLongTimeString()</td>
+                    <td>@license.RentalInformation.RentExpirationTime.ToLongTimeString()</td>
+                    <td>@license.RentalInformation?.TimeLeft().ToTimeSpan()</td>
+                </tr>
+            }
+        </tbody>
+    </table>
+}
+
+@code {
+    private LicenseServer.License[]? licenses;
+
+    private System.Timers.Timer? timer;
+
+    protected override async Task OnInitializedAsync()
+    {
+        licenses = (await LicenseService.GetLicensesAsync2()).ToArray();
+        timer = new System.Timers.Timer();
+        timer.Interval = 1000;
+        timer.Elapsed += async (object? sender, System.Timers.ElapsedEventArgs e) =>
+        {
+            await InvokeAsync(StateHasChanged);
+        };
+        timer.Enabled = true;
+    }
+}

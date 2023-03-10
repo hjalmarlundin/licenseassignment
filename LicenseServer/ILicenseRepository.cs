@@ -2,6 +2,8 @@ namespace LicenseServer;
 
 public interface ILicenseRepository
 {
-    Task<IEnumerable<License>> ReadAllAsync();
+    IEnumerable<License> ReadAll();
     Task AddOrUpdateAsync(License license);
+
+    Task InitializeAsync();
 }

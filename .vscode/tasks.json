@@ -7,7 +7,7 @@
             "type": "process",
             "args": [
                 "build",
-                "${workspaceFolder}/LicenseServer/LicenseServer.csproj",
+                "${workspaceFolder}/LicenseClient/LicenseClient.csproj",
                 "/property:GenerateFullPaths=true",
                 "/consoleloggerparameters:NoSummary"
             ],
@@ -19,7 +19,7 @@
             "type": "process",
             "args": [
                 "publish",
-                "${workspaceFolder}/LicenseServer/LicenseServer.csproj",
+                "${workspaceFolder}/LicenseClient/LicenseClient.csproj",
                 "/property:GenerateFullPaths=true",
                 "/consoleloggerparameters:NoSummary"
             ],
@@ -33,7 +33,7 @@
                 "watch",
                 "run",
                 "--project",
-                "${workspaceFolder}/LicenseServer/LicenseServer.csproj"
+                "${workspaceFolder}/LicenseClient/LicenseClient.csproj"
             ],
             "problemMatcher": "$msCompile"
         }

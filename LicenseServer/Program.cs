@@ -1,44 +1,48 @@
+namespace LicenseServer;
+
 using System.IO.Abstractions;
 using System.Text.Json.Serialization;
 using LicenseServer;
 using Microsoft.AspNetCore.Http.Json;
 
-var builder = WebApplication.CreateBuilder(args);
 
-// Add services to the container.
-builder.Services.AddLogging();
-builder.Services.AddTransient<ILicenseRepository, LicenseRepository>();
-builder.Services.AddSingleton<IFileSystem, FileSystem>();
-builder.Services.AddTransient<ILicenseService, LicenseService>();
 
-builder.Services.AddControllers();
-
-// .AddJsonOptions(options =>
-//     {
-//         options.JsonSerializerOptions.Converters.Add(new JsonStringEnumConverter());
-//     });
-
-builder.Services.Configure<JsonOptions>(options =>
+public class Program
 {
-    options.SerializerOptions.Converters.Add(new JsonStringEnumConverter());
-});
+    public static async Task Main(string[] args)
+    {
+        var builder = WebApplication.CreateBuilder(args);
 
-builder.Services.AddEndpointsApiExplorer();
-builder.Services.AddSwaggerGen();
+        // Add services to the container.
+        builder.Services.AddLogging();
+        builder.Services.AddSingleton<ILicenseRepository, LicenseRepository>();
+        builder.Services.AddSingleton<IFileSystem, FileSystem>();
+        builder.Services.AddTransient<ILicenseService, LicenseService>();
 
-var app = builder.Build();
+        builder.Services.AddControllers();
+        builder.Services.Configure<JsonOptions>(options => options.SerializerOptions.Converters.Add(new JsonStringEnumConverter()));
 
-// Configure the HTTP request pipeline.
-if (app.Environment.IsDevelopment())
-{
-    app.UseSwagger();
-    app.UseSwaggerUI();
+        builder.Services.AddEndpointsApiExplorer();
+        builder.Services.AddSwaggerGen();
+
+        var app = builder.Build();
+
+        // Configure the HTTP request pipeline.
+
+        if (app.Environment.IsDevelopment())
+        {
+            app.UseSwagger();
+            app.UseSwaggerUI();
+        }
+
+
+        var repository = app.Services.GetService<ILicenseRepository>();
+        await repository.InitializeAsync();
+
+        app.UseAuthorization();
+
+        app.MapControllers();
+
+        app.Run();
+    }
 }
-
-app.UseHttpsRedirection();
-
-app.UseAuthorization();
-
-app.MapControllers();
-
-app.Run();

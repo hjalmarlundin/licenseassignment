@@ -1,18 +1,6 @@
 namespace LicenseServer;
-
-using System.IO.Abstractions;
-using System.Text.Json;
-using System.Threading;
 using System.Linq;
-using System.Reactive;
 using System.Reactive.Linq;
-
-public interface ILicenseService
-{
-    Task AddLicense();
-    Task<IEnumerable<License>> ListAllLicenses();
-    Task<License> RentLicenseAsync(string renter);
-}
 
 public class LicenseService : ILicenseService
 {
@@ -25,22 +13,21 @@ public class LicenseService : ILicenseService
         this.licenseRepository = licenseRepository ?? throw new ArgumentNullException(nameof(licenseRepository));
     }
 
-    public async Task<IEnumerable<License>> ListAllLicenses()
+    public IEnumerable<License> ListAllLicenses()
     {
-        this.logger.LogDebug("Listing all licenses");
-        return await this.licenseRepository.ReadAllAsync();
+        return this.licenseRepository.ReadAll();
     }
 
-    public async Task AddLicense()
+    public async Task AddLicense(string licenseName)
     {
-        var license = new License() { RentalInformation = new RentalInformation() };
+        var license = new License() { Identifier = licenseName, RentalInformation = new RentalInformation() };
         this.logger.LogDebug($"Adding a new license with id: {license.Identifier}");
         await this.licenseRepository.AddOrUpdateAsync(license);
     }
 
     public async Task<License> RentLicenseAsync(string renter)
     {
-        var licenses = await this.licenseRepository.ReadAllAsync();
+        var licenses = this.licenseRepository.ReadAll();
         var firstFreeLicense = licenses.FirstOrDefault(x => x.RentalInformation.Status == LicenseStatus.Free);
         if (firstFreeLicense == null)
         {
@@ -55,14 +42,14 @@ public class LicenseService : ILicenseService
 
 
         this.logger.LogDebug($"Started renting license: {firstFreeLicense.Identifier} at {firstFreeLicense.RentalInformation.RentedTime} ");
-        timer.Subscribe(async x => await OnStartedRenting(x, firstFreeLicense));
+        timer.Subscribe(async _ => await OnStartedRenting(firstFreeLicense));
         await this.licenseRepository.AddOrUpdateAsync(firstFreeLicense);
 
         return firstFreeLicense;
 
     }
 
-    private async Task OnStartedRenting(Int64 obj, License license)
+    private async Task OnStartedRenting(License license)
     {
         this.logger.LogInformation($"Rent for {license.Identifier} expired at {license.RentalInformation.RentExpirationTime}");
         license.RentalInformation.Status = LicenseStatus.Deleted;

@@ -16,22 +16,22 @@ public class LicenseController : ControllerBase
     }
 
     [HttpGet("~/GetLicenses")]
-    public async Task<IEnumerable<License>> Get()
+    public IEnumerable<License> Get()
     {
-        return await licenseRepository.ListAllLicenses();
+        return licenseRepository.ListAllLicenses();
     }
 
     [HttpPost(Name = "AddLicense")]
-    public async Task<StatusCodeResult> AddLicense()
+    public async Task<StatusCodeResult> AddLicense(string licenseName = null)
     {
-        await this.licenseRepository.AddLicense();
+        await this.licenseRepository.AddLicense(licenseName);
         return StatusCode(201);
     }
 
     [HttpGet("~/RentLicense")]
     public async Task<License> Rent(string renter = "client1")
     {
-        var license = await this.licenseRepository.RentLicenseAsync(renter);
-        return license;
+        this.logger.LogDebug($"Received rent license request for renter: {renter}");
+        return await this.licenseRepository.RentLicenseAsync(renter);
     }
 }

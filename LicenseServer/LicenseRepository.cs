@@ -13,31 +13,21 @@ public class LicenseRepository : ILicenseRepository
     private readonly IFileSystem fileSystem;
     private List<License> licenses;
 
-
     public LicenseRepository(ILogger<LicenseRepository> logger, IFileSystem fileSystem)
     {
         this.fileSystem = fileSystem ?? throw new ArgumentNullException(nameof(fileSystem));
         this.filePath = Path.Combine(directoryPath, "licenses.json");
         this.logger = logger;
-
-        if (!fileSystem.Directory.Exists(this.directoryPath))
-        {
-            AddSomeLicensesForDevelopment(fileSystem);
-        }
-
-
     }
 
-    public async Task<IEnumerable<License>> ReadAllAsync()
+    public IEnumerable<License> ReadAll()
     {
-        licenses ??= await InitializeAsync();
         this.logger.LogDebug($"Returning {licenses.Count} licenses");
         return licenses;
     }
 
     public async Task AddOrUpdateAsync(License license)
     {
-        licenses ??= await InitializeAsync();
         var licenseInList = licenses.SingleOrDefault(x => x.Identifier == license.Identifier);
         if (licenseInList == null)
         {
@@ -54,8 +44,13 @@ public class LicenseRepository : ILicenseRepository
         await fileSystem.File.WriteAllTextAsync(filePath, text);
     }
 
-    private async Task<List<License>> InitializeAsync()
+    public async Task InitializeAsync()
     {
+        if (!fileSystem.File.Exists(this.filePath))
+        {
+            await AddSomeLicensesForDevelopment(fileSystem);
+        }
+
         this.logger.LogDebug($"Reading all licenses from {this.filePath}");
         if (!this.fileSystem.File.Exists(this.filePath))
         {
@@ -63,12 +58,17 @@ public class LicenseRepository : ILicenseRepository
         }
 
         var licensestring = await this.fileSystem.File.ReadAllTextAsync(this.filePath);
-        return JsonSerializer.Deserialize<List<License>>(licensestring);
+        this.licenses = JsonSerializer.Deserialize<List<License>>(licensestring);
     }
 
-    private void AddSomeLicensesForDevelopment(IFileSystem fileSystem)
+    private async Task AddSomeLicensesForDevelopment(IFileSystem fileSystem)
     {
         fileSystem.Directory.CreateDirectory(this.directoryPath);
+        var file = fileSystem.File.Create(filePath);
+        await file.DisposeAsync();
+
+
+        this.logger.LogInformation("Creating some licenses for develoment");
 
         var list = new List<License>
         {
@@ -76,6 +76,8 @@ public class LicenseRepository : ILicenseRepository
             new License() { Identifier = "AnotherKindOfNiceLicense", RentalInformation = new RentalInformation() { }}
         };
         var text = JsonSerializer.Serialize(list);
-        fileSystem.File.WriteAllText(filePath, text);
+        await fileSystem.File.WriteAllTextAsync(filePath, text);
+
+        // await fileSystem.File.WriteAllTextAsync(filePath, text);
     }
 }
