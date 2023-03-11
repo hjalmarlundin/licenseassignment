@@ -20,6 +20,12 @@ public class LicenseService : ILicenseService
 
     public async Task<IResult> AddLicense(string licenseName)
     {
+        if (licenseName == null)
+        {
+            var message = "License name cannot be empty";
+            this.logger.LogWarning(message);
+            return Results.BadRequest(message);
+        }
         var licenses = this.licenseRepository.ReadAll();
         if (licenses.Any(x => x.Identifier == licenseName))
         {
