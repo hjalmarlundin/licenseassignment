@@ -10,22 +10,16 @@ public static class Program
     public static async Task Main(string[] args)
     {
         var builder = WebApplication.CreateBuilder(args);
-
-        // Add services to the container.
         builder.Services.AddLogging();
         builder.Services.AddSingleton<ILicenseRepository, LicenseRepository>();
         builder.Services.AddSingleton<IFileSystem, FileSystem>();
         builder.Services.AddTransient<ILicenseService, LicenseService>();
-
         builder.Services.AddControllers();
         builder.Services.Configure<JsonOptions>(options => options.SerializerOptions.Converters.Add(new JsonStringEnumConverter()));
-
         builder.Services.AddEndpointsApiExplorer();
         builder.Services.AddSwaggerGen();
 
         var app = builder.Build();
-
-        // Configure the HTTP request pipeline.
 
         if (app.Environment.IsDevelopment())
         {
@@ -33,14 +27,18 @@ public static class Program
             app.UseSwaggerUI();
         }
 
-
-        var repository = app.Services.GetService<ILicenseRepository>();
-        await repository.InitializeAsync();
+        await InitializeRepository(app);
 
         app.UseAuthorization();
 
         app.MapControllers();
 
         app.Run();
+    }
+
+    private static async Task InitializeRepository(WebApplication app)
+    {
+        var repository = app.Services.GetService<ILicenseRepository>();
+        await repository.InitializeAsync();
     }
 }
