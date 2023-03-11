@@ -33,7 +33,14 @@ public class LicenseService
         await licenseHttpClient.RentLicense(clientName);
         var licenses = await licenseHttpClient.GetAllLicenses();
         var license = licenses.SingleOrDefault(x => x.RentalInformation.Renter == clientName && x.RentalInformation.Status == LicenseStatus.Rented);
-        logger.LogInformation($"Rented license: {license?.Identifier}");
+        if (license == null)
+        {
+            logger.LogInformation($"No active license exsits");
+        }
+        else
+        {
+            logger.LogInformation($"Rented license: {license?.Identifier}");
+        }
         return license;
     }
 

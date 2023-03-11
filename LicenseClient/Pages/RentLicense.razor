@@ -9,7 +9,7 @@
 
 @if (license == null)
 {
-    <p><em>No license rented...</em></p>
+    <p><em>Client has no active license.</em></p>
 }
 else
 {
@@ -37,22 +37,31 @@ else
 </table>
 }
 
-<button class="btn btn-primary" @onclick="AddLicense">Rent license</button>
+<button class="btn btn-primary" disabled=@licenseExist @onclick="AddLicense">Rent license</button>
 
 @code {
-    private LicenseServer.License[]? licenses;
 
     private LicenseServer.License? license;
 
+    private bool licenseExist;
+
     private System.Timers.Timer? timer;
 
-    private async Task UpdateLicenseList()
+    private async Task StartRenderTimer()
     {
-        licenses = (await LicenseService.GetLicensesAsync()).ToArray();
         timer = new System.Timers.Timer();
         timer.Interval = 1000;
         timer.Elapsed += async (object? sender, System.Timers.ElapsedEventArgs e) =>
         {
+            if (license?.RentalInformation.TimeLeft().Second > 0)
+            {
+                licenseExist = true;
+            }
+            else
+            {
+                licenseExist = false;
+            }
+
             await InvokeAsync(StateHasChanged);
         };
         timer.Enabled = true;
@@ -61,6 +70,6 @@ else
     private async Task AddLicense()
     {
         license = await LicenseService.RentLicense();
-        await UpdateLicenseList();
+        await StartRenderTimer();
     }
 }

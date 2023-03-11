@@ -22,13 +22,13 @@ public class LicenseController : ControllerBase
     }
 
     [HttpPost(Name = "AddLicense")]
-    public async Task AddLicense(string licenseName = null)
+    public async Task<IResult> AddLicense(string licenseName = null)
     {
-        await this.licenseRepository.AddLicense(licenseName);
+        return await this.licenseRepository.AddLicense(licenseName);
     }
 
     [HttpGet("~/RentLicense")]
-    public async Task<License> Rent(string renter = "client1")
+    public async Task<IResult> Rent(string renter = "client1")
     {
         this.logger.LogDebug($"Received rent license request for renter: {renter}");
         return await this.licenseRepository.RentLicenseAsync(renter);

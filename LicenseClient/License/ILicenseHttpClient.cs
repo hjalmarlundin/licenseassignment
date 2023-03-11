@@ -9,5 +9,4 @@ public interface ILicenseHttpClient
     Task<HttpResponseMessage> AddLicense(string licenseName);
 
     Task<HttpResponseMessage> RentLicense(string clientName);
-
 }

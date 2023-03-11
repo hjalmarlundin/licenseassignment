@@ -18,29 +18,39 @@ public class LicenseService : ILicenseService
         return this.licenseRepository.ReadAll();
     }
 
-    public async Task AddLicense(string licenseName)
+    public async Task<IResult> AddLicense(string licenseName)
     {
+        var licenses = this.licenseRepository.ReadAll();
+        if (licenses.Any(x => x.Identifier == licenseName))
+        {
+            var message = $"There already exists a license with name {licenseName}";
+            this.logger.LogWarning(message);
+            return Results.BadRequest(message);
+        }
+
         var license = new License() { Identifier = licenseName, RentalInformation = new RentalInformation() };
         this.logger.LogDebug($"Adding a new license with id: {license.Identifier}");
         await this.licenseRepository.AddOrUpdateAsync(license);
+        return Results.Ok();
     }
 
-    public async Task<License> RentLicenseAsync(string renter)
+    public async Task<IResult> RentLicenseAsync(string renter)
     {
         var licenses = this.licenseRepository.ReadAll();
 
         var clientAlreadyHasLicense = licenses.Any(x => x.RentalInformation.Renter == renter && x.RentalInformation.Status == LicenseStatus.Rented);
         if (clientAlreadyHasLicense)
         {
-            this.logger.LogWarning($"Client {renter} already has an active license");
-            return null;
+            var message = $"Client {renter} already has an active license";
+            this.logger.LogWarning(message);
+            return Results.BadRequest(message);
         }
 
         var firstFreeLicense = licenses.FirstOrDefault(x => x.RentalInformation.Status == LicenseStatus.Free);
         if (firstFreeLicense == null)
         {
             this.logger.LogInformation("No free license exist.");
-            return null;
+            return Results.BadRequest("No free license exist");
         }
 
         var timer = Observable.Timer(TimeSpan.FromSeconds(15));
@@ -49,7 +59,7 @@ public class LicenseService : ILicenseService
         this.logger.LogDebug($"Started renting license: {firstFreeLicense.Identifier} at {firstFreeLicense.RentalInformation.RentedTime} ");
         timer.Subscribe(async _ => await OnRentExpiration(firstFreeLicense));
         await this.licenseRepository.AddOrUpdateAsync(firstFreeLicense);
-        return firstFreeLicense;
+        return Results.Ok();
     }
 
     private static void UpdateLicenseInformation(string renter, License license)

@@ -6,9 +6,7 @@ using System.Text.Json;
 public class LicenseRepository : ILicenseRepository
 {
     private readonly string directoryPath = "tmp";
-
     private readonly string filePath;
-
     private readonly ILogger<LicenseRepository> logger;
     private readonly IFileSystem fileSystem;
     private List<License> licenses;
@@ -52,11 +50,6 @@ public class LicenseRepository : ILicenseRepository
         }
 
         this.logger.LogDebug($"Reading all licenses from {this.filePath}");
-        if (!this.fileSystem.File.Exists(this.filePath))
-        {
-            this.logger.LogError("Could not find any file to read from");
-        }
-
         var licensestring = await this.fileSystem.File.ReadAllTextAsync(this.filePath);
         this.licenses = JsonSerializer.Deserialize<List<License>>(licensestring);
     }
@@ -66,8 +59,6 @@ public class LicenseRepository : ILicenseRepository
         fileSystem.Directory.CreateDirectory(this.directoryPath);
         var file = fileSystem.File.Create(filePath);
         await file.DisposeAsync();
-
-
         this.logger.LogInformation("Creating some licenses for develoment");
 
         var list = new List<License>
@@ -77,7 +68,5 @@ public class LicenseRepository : ILicenseRepository
         };
         var text = JsonSerializer.Serialize(list);
         await fileSystem.File.WriteAllTextAsync(filePath, text);
-
-        // await fileSystem.File.WriteAllTextAsync(filePath, text);
     }
 }
