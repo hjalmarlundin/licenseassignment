@@ -37,15 +37,23 @@ else
 </table>
 }
 
-<button class="btn btn-primary" disabled=@licenseExist @onclick="AddLicense">Rent license</button>
+<button class="btn btn-primary" disabled=@licenseIsActive @onclick="AddLicense">Rent license</button>
+
+@if (licenseExpired == true)
+{
+    <p><em>License has expired.</em></p>
+}
 
 @code {
 
     private LicenseServer.License? license;
 
-    private bool licenseExist;
+    private bool licenseIsActive;
+
+    private bool? licenseExpired;
 
     private System.Timers.Timer? timer;
+
 
     private async Task StartRenderTimer()
     {
@@ -55,11 +63,12 @@ else
         {
             if (license?.RentalInformation.TimeLeft().Second > 0)
             {
-                licenseExist = true;
+                licenseIsActive = true;
             }
             else
             {
-                licenseExist = false;
+                licenseIsActive = false;
+                licenseExpired = true;
             }
 
             await InvokeAsync(StateHasChanged);
