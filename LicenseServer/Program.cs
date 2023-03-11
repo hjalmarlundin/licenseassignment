@@ -5,9 +5,7 @@ using System.Text.Json.Serialization;
 using LicenseServer;
 using Microsoft.AspNetCore.Http.Json;
 
-
-
-public class Program
+public static class Program
 {
     public static async Task Main(string[] args)
     {

@@ -5,9 +5,7 @@
 @using LicenseClient.Data
 @inject LicenseService LicenseService
 
-<h1>Admin forecast</h1>
-
-<p>This component demonstrates fetching data from a service.</p>
+<h1>Admin page</h1>
 
 @if (licenses == null)
 {
@@ -42,14 +40,25 @@ else
     </table>
 }
 
+<button class="btn btn-primary" @onclick="AddLicense">Add License</button>
+<input type="text" @bind="@input" />
+@input
+
 @code {
     private LicenseServer.License[]? licenses;
 
     private System.Timers.Timer? timer;
 
+    private string? input;
+
     protected override async Task OnInitializedAsync()
     {
-        licenses = (await LicenseService.GetLicensesAsync2()).ToArray();
+        await UpdateLicenseList();
+    }
+
+    private async Task UpdateLicenseList()
+    {
+        licenses = (await LicenseService.GetLicensesAsync()).ToArray();
         timer = new System.Timers.Timer();
         timer.Interval = 1000;
         timer.Elapsed += async (object? sender, System.Timers.ElapsedEventArgs e) =>
@@ -57,5 +66,16 @@ else
             await InvokeAsync(StateHasChanged);
         };
         timer.Enabled = true;
+    }
+
+    private async Task AddLicense()
+    {
+        if (input == null)
+        {
+            return;
+        }
+
+        await LicenseService.AddLicense(input);
+        await UpdateLicenseList();
     }
 }

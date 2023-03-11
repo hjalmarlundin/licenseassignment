@@ -1,0 +1,66 @@
+﻿@page "/rentlicense"
+
+<PageTitle>Rent License</PageTitle>
+
+@using LicenseClient.Data
+@inject LicenseService LicenseService
+
+<h1>Rent License</h1>
+
+@if (license == null)
+{
+    <p><em>No license rented...</em></p>
+}
+else
+{
+    <table class="table">
+    <thead>
+        <tr>
+            <th>Id</th>
+            <th>Status</th>
+            <th>Renter</th>
+            <th>Rented time</th>
+            <th>Rent expiration</th>
+            <th>Time left</th>
+        </tr>
+    </thead>
+    <tbody>
+        <tr>
+            <td>@license.Identifier</td>
+            <td>@license.RentalInformation.Status.ToString()</td>
+            <td>@license.RentalInformation.Renter?.ToString()</td>
+            <td>@license.RentalInformation.RentedTime.ToLongTimeString()</td>
+            <td>@license.RentalInformation.RentExpirationTime.ToLongTimeString()</td>
+            <td>@license.RentalInformation?.TimeLeft().ToTimeSpan()</td>
+        </tr>
+    </tbody>
+</table>
+}
+
+<button class="btn btn-primary" @onclick="AddLicense">Rent license</button>
+
+@code {
+    private LicenseServer.License[]? licenses;
+
+    private LicenseServer.License? license;
+
+    private System.Timers.Timer? timer;
+
+    private async Task UpdateLicenseList()
+    {
+        licenses = (await LicenseService.GetLicensesAsync()).ToArray();
+        timer = new System.Timers.Timer();
+        timer.Interval = 1000;
+        timer.Elapsed += async (object? sender, System.Timers.ElapsedEventArgs e) =>
+        {
+            await InvokeAsync(StateHasChanged);
+        };
+        timer.Enabled = true;
+    }
+
+    private async Task AddLicense()
+    {
+        license = await LicenseService.RentLicense();
+        await UpdateLicenseList();
+    }
+}

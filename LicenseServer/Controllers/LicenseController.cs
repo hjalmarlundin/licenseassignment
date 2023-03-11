@@ -22,10 +22,9 @@ public class LicenseController : ControllerBase
     }
 
     [HttpPost(Name = "AddLicense")]
-    public async Task<StatusCodeResult> AddLicense(string licenseName = null)
+    public async Task AddLicense(string licenseName = null)
     {
         await this.licenseRepository.AddLicense(licenseName);
-        return StatusCode(201);
     }
 
     [HttpGet("~/RentLicense")]

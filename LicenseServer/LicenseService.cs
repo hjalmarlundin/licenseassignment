@@ -28,32 +28,42 @@ public class LicenseService : ILicenseService
     public async Task<License> RentLicenseAsync(string renter)
     {
         var licenses = this.licenseRepository.ReadAll();
+
+        var clientAlreadyHasLicense = licenses.Any(x => x.RentalInformation.Renter == renter && x.RentalInformation.Status == LicenseStatus.Rented);
+        if (clientAlreadyHasLicense)
+        {
+            this.logger.LogWarning($"Client {renter} already has an active license");
+            return null;
+        }
+
         var firstFreeLicense = licenses.FirstOrDefault(x => x.RentalInformation.Status == LicenseStatus.Free);
         if (firstFreeLicense == null)
         {
+            this.logger.LogInformation("No free license exist.");
             return null;
         }
 
         var timer = Observable.Timer(TimeSpan.FromSeconds(15));
-        firstFreeLicense.RentalInformation.RentedTime = DateTime.Now;
-        firstFreeLicense.RentalInformation.RentExpirationTime = DateTime.Now.AddSeconds(15);
-        firstFreeLicense.RentalInformation.Renter = renter;
-        firstFreeLicense.RentalInformation.Status = LicenseStatus.Rented;
-
+        UpdateLicenseInformation(renter, firstFreeLicense);
 
         this.logger.LogDebug($"Started renting license: {firstFreeLicense.Identifier} at {firstFreeLicense.RentalInformation.RentedTime} ");
-        timer.Subscribe(async _ => await OnStartedRenting(firstFreeLicense));
+        timer.Subscribe(async _ => await OnRentExpiration(firstFreeLicense));
         await this.licenseRepository.AddOrUpdateAsync(firstFreeLicense);
-
         return firstFreeLicense;
-
     }
 
-    private async Task OnStartedRenting(License license)
+    private static void UpdateLicenseInformation(string renter, License license)
+    {
+        license.RentalInformation.RentedTime = DateTime.Now;
+        license.RentalInformation.RentExpirationTime = DateTime.Now.AddSeconds(15);
+        license.RentalInformation.Renter = renter;
+        license.RentalInformation.Status = LicenseStatus.Rented;
+    }
+
+    private async Task OnRentExpiration(License license)
     {
         this.logger.LogInformation($"Rent for {license.Identifier} expired at {license.RentalInformation.RentExpirationTime}");
         license.RentalInformation.Status = LicenseStatus.Deleted;
-        license.RentalInformation.Renter = "Expired";
         await this.licenseRepository.AddOrUpdateAsync(license);
     }
 }
